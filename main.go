@@ -8,6 +8,7 @@ import (
 
 	"github.com/EngineerBetter/concourse-up/bosh"
 	"github.com/EngineerBetter/concourse-up/director"
+	"github.com/EngineerBetter/concourse-up/commands"
 	"github.com/EngineerBetter/concourse-up/fly"
 	"github.com/EngineerBetter/concourse-up/terraform"
 	"github.com/fatih/color"
@@ -30,25 +31,8 @@ func main() {
 	app.Name = "Concourse-Up"
 	app.Usage = "A CLI tool to deploy Concourse CI"
 	app.Version = ConcourseUpVersion
-	app.Commands = []cli.Command{
-		{
-			Name: "deploy",
-		},
-		{
-			Name: "destroy",
-		},
-		{
-			Name: "info",
-		},
-	}
-	app.Flags = []cli.Flag{
-	cli.BoolFlag{
-		Name:        "non-interactive, n",
-		EnvVar:      "NON_INTERACTIVE",
-		Usage:       "Non interactive",
-		Destination: &nonInteractive,
-		},
-	}
+	app.Commands = commands.Commands
+	app.Flags = commands.GlobalFlags
 	cli.AppHelpTemplate = fmt.Sprintf(`%s
 
 See 'concourse-up help <command>' to read about a specific command.

@@ -303,7 +303,7 @@ resource "aws_security_group" "director" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["${var.source_access_ip}/32", "${aws_nat_gateway.default.public_ip}/32"]
+    cidr_blocks = ["${var.source_access_ip}/32", "${aws_nat_gateway.default.public_ip}/32","10.101.0.0/16","10.103.0.0/16","10.122.0.0/23","10.123.0.0/23","10.124.0.0/23"]
   }
 
   egress {
@@ -407,6 +407,7 @@ resource "aws_security_group" "vms" {
     to_port   = 22
     self      = true
     protocol  = "tcp"
+		cidr_blocks = ["${data.aws_vpc.selected.cidr_block}","10.101.0.0/16","10.103.0.0/16","10.122.0.0/23","10.123.0.0/23","10.124.0.0/23"]
   }
 
   egress {
