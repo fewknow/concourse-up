@@ -156,18 +156,32 @@ resource "aws_iam_user_policy" "bosh" {
 EOF
 }
 
-resource "aws_vpc" "default" {
-  cidr_block = "10.0.0.0/16"
+variable "vpc_id" {
+	default = "vpc-ada295d4"
+}
 
-  tags {
+data "aws_vpc" "default" {
+  id = "${var.vpc_id}"
+
+	tags {
     Name = "${var.deployment}"
     concourse-up-project = "${var.project}"
     concourse-up-component = "bosh"
   }
 }
 
+# resource "aws_vpc" "default" {
+#   cidr_block = "10.0.0.0/16"
+#
+#   tags {
+#     Name = "${var.deployment}"
+#     concourse-up-project = "${var.project}"
+#     concourse-up-component = "bosh"
+#   }
+# }
+
 resource "aws_internet_gateway" "default" {
-  vpc_id = "${aws_vpc.default.id}"
+  vpc_id = "${data.terraform_remote_state.config.aws_vpc.default.id}"
 
   tags {
     Name = "${var.deployment}"
@@ -442,7 +456,7 @@ resource "aws_security_group" "atc" {
     to_port     = 80
     protocol    = "tcp"
     security_groups = ["${aws_security_group.vms.id}", "${aws_security_group.director.id}"]
-    cidr_blocks = [<% .AllowIPs %>]  
+    cidr_blocks = [<% .AllowIPs %>]
   }
 
   ingress {
