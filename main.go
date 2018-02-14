@@ -7,26 +7,48 @@ import (
 	"strings"
 
 	"github.com/EngineerBetter/concourse-up/bosh"
-	"github.com/EngineerBetter/concourse-up/commands"
 	"github.com/EngineerBetter/concourse-up/director"
 	"github.com/EngineerBetter/concourse-up/fly"
 	"github.com/EngineerBetter/concourse-up/terraform"
 	"github.com/fatih/color"
-
-	"gopkg.in/urfave/cli.v1"
 )
+
+import "gopkg.in/urfave/cli.v1"
 
 // ConcourseUpVersion is a compile-time variable set with -ldflags
 var ConcourseUpVersion = "COMPILE_TIME_VARIABLE_main_concourseUpVersion"
+var nonInteractive bool
+var yellow = color.New(color.FgYellow).SprintFunc()
 var blue = color.New(color.FgCyan, color.Bold).SprintfFunc()
+
+func NonInteractiveModeEnabled() bool {
+	return nonInteractive
+}
 
 func main() {
 	app := cli.NewApp()
 	app.Name = "Concourse-Up"
 	app.Usage = "A CLI tool to deploy Concourse CI"
 	app.Version = ConcourseUpVersion
-	app.Commands = commands.Commands
-	app.Flags = commands.GlobalFlags
+	app.Commands = []cli.Command{
+		{
+			Name: "deploy",
+		},
+		{
+			Name: "destroy",
+		},
+		{
+			Name: "info",
+		},
+	}
+	app.Flags = []cli.Flag{
+	cli.BoolFlag{
+		Name:        "non-interactive, n",
+		EnvVar:      "NON_INTERACTIVE",
+		Usage:       "Non interactive",
+		Destination: &nonInteractive,
+		},
+	}
 	cli.AppHelpTemplate = fmt.Sprintf(`%s
 
 See 'concourse-up help <command>' to read about a specific command.
