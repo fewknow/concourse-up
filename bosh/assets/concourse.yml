@@ -90,7 +90,7 @@ instance_groups:
   networks:
   - name: public
     default: [dns, gateway]
-    static_ips: [10.0.0.7]
+    static_ips: [10.90.70.7]
   - name: vip
     static_ips: [<% .ATCPublicIP %>]
   vm_extensions:
@@ -1115,7 +1115,7 @@ instance_groups:
     release: riemann
     properties:
       riemann_emitter:
-        host: 10.0.0.7
+        host: 10.90.70.7
         port: 5555
 
 update:

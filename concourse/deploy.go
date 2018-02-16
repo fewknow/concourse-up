@@ -178,12 +178,12 @@ func (client *Client) ensureDirectorCerts(config *config.Config, metadata *terra
 
 	ip := metadata.DirectorPublicIP.Value
 	_, err := client.stdout.Write(
-		[]byte(fmt.Sprintf("\nGENERATING BOSH DIRECTOR CERTIFICATE (%s, 10.0.0.6)\n", ip)))
+		[]byte(fmt.Sprintf("\nGENERATING BOSH DIRECTOR CERTIFICATE (%s, 10.90.70.6)\n", ip)))
 	if err != nil {
 		return nil, err
 	}
 
-	directorCerts, err := client.certGenerator(config.Deployment, ip, "10.0.0.6")
+	directorCerts, err := client.certGenerator(config.Deployment, ip, "10.90.70.6")
 	if err != nil {
 		return nil, err
 	}

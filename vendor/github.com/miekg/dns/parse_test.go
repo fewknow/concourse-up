@@ -851,18 +851,18 @@ func TestComment(t *testing.T) {
 		"; this is comment 4": true, "; this is comment 6": true,
 		"; this is comment 7": true, "; this is comment 8": true}
 	zone := `
-foo. IN A 10.0.0.1 ; this is comment 1
+foo. IN A 10.90.70.1 ; this is comment 1
 foo. IN A (
-	10.0.0.2 ; this is comment2
+	10.90.70.2 ; this is comment2
 )
 ; this is comment3
-foo. IN A 10.0.0.3
-foo. IN A ( 10.0.0.4 ); this is comment 4
+foo. IN A 10.90.70.3
+foo. IN A ( 10.90.70.4 ); this is comment 4
 
-foo. IN A 10.0.0.5
+foo. IN A 10.90.70.5
 ; this is comment5
 
-foo. IN A 10.0.0.6
+foo. IN A 10.90.70.7
 
 foo. IN DNSKEY 256 3 5 AwEAAb+8l ; this is comment 6
 foo. IN NSEC miek.nl. TXT RRSIG NSEC; this is comment 7

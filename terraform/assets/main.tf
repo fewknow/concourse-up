@@ -162,12 +162,6 @@ variable "vpc_id" {
 
 data "aws_vpc" "default" {
   id = "${var.vpc_id}"
-
-	tags {
-    Name = "${var.deployment}"
-    concourse-up-project = "${var.project}"
-    concourse-up-component = "bosh"
-  }
 }
 
 # resource "aws_vpc" "default" {
@@ -180,26 +174,26 @@ data "aws_vpc" "default" {
 #   }
 # }
 
-resource "aws_internet_gateway" "default" {
-  vpc_id = "${aws_vpc.default.id}"
-}
-
-resource "aws_route" "internet_access" {
-  route_table_id         = "${aws_vpc.default.main_route_table_id}"
-  destination_cidr_block = "0.0.0.0/0"
-  gateway_id             = "${aws_internet_gateway.default.id}"
-}
+# resource "aws_internet_gateway" "default" {
+#   vpc_id = "${data.aws_vpc.default.id}"
+# }
+#
+# resource "aws_route" "internet_access" {
+#   route_table_id         = "${data.aws_vpc.default.main_route_table_id}"
+#   destination_cidr_block = "0.0.0.0/0"
+#   gateway_id             = "${aws_internet_gateway.default.id}"
+# }
+#
 
  resource "aws_nat_gateway" "default" {
   allocation_id = "${aws_eip.nat.id}"
   subnet_id     = "${aws_subnet.public.id}"
-
-  depends_on = ["aws_internet_gateway.default"]
 }
 
 
+
 # resource "aws_route_table" "private" {
-#   vpc_id = "${aws_vpc.default.id}"
+#   vpc_id = "${data.aws_vpc.default.id}"
 #
 #   route {
 #     cidr_block = "0.0.0.0/0"
@@ -213,44 +207,37 @@ resource "aws_route" "internet_access" {
 #   }
 # }
 
-data "aws_subnet" "public" {
-  id = "subnet-45752869"
+resource "aws_subnet" "public" {
+  vpc_id                  = "${data.aws_vpc.default.id}"
+  availability_zone       = "${var.availability_zone}"
+  cidr_block              = "10.90.70.0/24"
+  map_public_ip_on_launch = false
+
+  tags {
+    Name = "${var.deployment}-public"
+    concourse-up-project = "${var.project}"
+    concourse-up-component = "bosh"
+  }
 }
 
-# resource "aws_subnet" "public" {
-#   vpc_id                  = "${aws_vpc.default.id}"
-#   availability_zone       = "${var.availability_zone}"
-#   cidr_block              = "10.0.0.0/24"
-#   map_public_ip_on_launch = true
-#
-#   tags {
-#     Name = "${var.deployment}-public"
-#     concourse-up-project = "${var.project}"
-#     concourse-up-component = "bosh"
-#   }
-# }
 
-data "aws_subnet" "private" {
-  id = "subnet-1d712c31"
+resource "aws_subnet" "private" {
+  vpc_id                  = "${data.aws_vpc.default.id}"
+  availability_zone       = "${var.availability_zone}"
+  cidr_block              = "10.90.71.0/24"
+  map_public_ip_on_launch = false
+
+  tags {
+    Name = "${var.deployment}-private"
+    concourse-up-project = "${var.project}"
+    concourse-up-component = "bosh"
+  }
 }
 
-# resource "aws_subnet" "private" {
-#   vpc_id                  = "${aws_vpc.default.id}"
-#   availability_zone       = "${var.availability_zone}"
-#   cidr_block              = "10.0.1.0/24"
-#   map_public_ip_on_launch = false
-#
-#   tags {
-#     Name = "${var.deployment}-private"
-#     concourse-up-project = "${var.project}"
-#     concourse-up-component = "bosh"
-#   }
-# }
-
-# resource "aws_route_table_association" "private" {
-#   subnet_id      = "${aws_subnet.private.id}"
-#   route_table_id = "${aws_route_table.private.id}"
-# }
+resource "aws_route_table_association" "private" {
+  subnet_id      = "${aws_subnet.private.id}"
+  route_table_id = "rtb-2766c55c"
+}
 
 <%if .HostedZoneID %>
 resource "aws_route53_record" "concourse" {
@@ -258,17 +245,9 @@ resource "aws_route53_record" "concourse" {
   name    = "${var.hosted_zone_record_prefix}"
   ttl     = "60"
   type    = "A"
-  records = ["${aws_eip.atc.public_ip}"]
+  records = ["10.90.70.7"]
 }
 <%end%>
-
-resource "aws_eip" "director" {
-  vpc = true
-}
-
-resource "aws_eip" "atc" {
-  vpc = true
-}
 
 resource "aws_eip" "nat" {
   vpc = true
@@ -277,7 +256,7 @@ resource "aws_eip" "nat" {
 resource "aws_security_group" "director" {
   name        = "${var.deployment}-director"
   description = "Concourse UP Default BOSH security group"
-  vpc_id      = "${aws_vpc.default.id}"
+  vpc_id      = "${data.aws_vpc.default.id}"
 
   tags {
     Name = "${var.deployment}-director"
@@ -317,7 +296,7 @@ resource "aws_security_group" "director" {
 resource "aws_security_group" "vms" {
   name        = "${var.deployment}-vms"
   description = "Concourse UP VMs security group"
-  vpc_id      = "${aws_vpc.default.id}"
+  vpc_id      = "${data.aws_vpc.default.id}"
 
   tags {
     Name = "${var.deployment}-vms"
@@ -329,14 +308,14 @@ resource "aws_security_group" "vms" {
     from_port   = 6868
     to_port     = 6868
     protocol    = "tcp"
-    cidr_blocks = ["${data.aws_vpc.selected.cidr_block}"]
+    cidr_blocks = ["${data.aws_vpc.default.cidr_block}"]
   }
 
   ingress {
     from_port   = 4222
     to_port     = 4222
     protocol    = "tcp"
-    cidr_blocks = ["${data.aws_vpc.selected.cidr_block}"]
+    cidr_blocks = ["${data.aws_vpc.default.cidr_block}"]
   }
 
 
@@ -344,70 +323,70 @@ resource "aws_security_group" "vms" {
     from_port   = 25250
     to_port     = 25250
     protocol    = "tcp"
-    cidr_blocks = ["${data.aws_vpc.selected.cidr_block}"]
+    cidr_blocks = ["${data.aws_vpc.default.cidr_block}"]
   }
 
   ingress {
     from_port   = 25555
     to_port     = 25555
     protocol    = "tcp"
-    cidr_blocks = ["${data.aws_vpc.selected.cidr_block}"]
+    cidr_blocks = ["${data.aws_vpc.default.cidr_block}"]
   }
 
   ingress {
     from_port   = 25777
     to_port     = 25777
     protocol    = "tcp"
-    cidr_blocks = ["${data.aws_vpc.selected.cidr_block}"]
+    cidr_blocks = ["${data.aws_vpc.default.cidr_block}"]
   }
 
   ingress {
     from_port   = 53
     to_port     = 53
     protocol    = "udp"
-    cidr_blocks = ["${data.aws_vpc.selected.cidr_block}"]
+    cidr_blocks = ["${data.aws_vpc.default.cidr_block}"]
   }
 
   ingress {
     from_port   = 2222
     to_port     = 2222
     protocol    = "tcp"
-    cidr_blocks = ["${data.aws_vpc.selected.cidr_block}"]
+    cidr_blocks = ["${data.aws_vpc.default.cidr_block}"]
   }
 
   ingress {
     from_port   = 5555
     to_port     = 5555
     protocol    = "tcp"
-    cidr_blocks = ["${data.aws_vpc.selected.cidr_block}"]
+    cidr_blocks = ["${data.aws_vpc.default.cidr_block}"]
   }
 
   ingress {
     from_port   = 7777
     to_port     = 7777
     protocol    = "tcp"
-    cidr_blocks = ["${data.aws_vpc.selected.cidr_block}"]
+    cidr_blocks = ["${data.aws_vpc.default.cidr_block}"]
   }
 
   ingress {
     from_port   = 7788
     to_port     = 7788
     protocol    = "tcp"
-    cidr_blocks = ["${data.aws_vpc.selected.cidr_block}"]
+    cidr_blocks = ["${data.aws_vpc.default.cidr_block}"]
   }
 
   ingress {
     from_port   = 0
     to_port     = 0
     protocol    = "icmp"
-    cidr_blocks = ["${data.aws_vpc.selected.cidr_block}"]
+    cidr_blocks = ["${data.aws_vpc.default.cidr_block}"]
   }
   ingress {
     from_port = 22
     to_port   = 22
     self      = true
     protocol  = "tcp"
-		cidr_blocks = ["${data.aws_vpc.selected.cidr_block}","10.101.0.0/16","10.103.0.0/16","10.122.0.0/23","10.123.0.0/23","10.124.0.0/23"]
+		cidr_blocks = ["${data.aws_vpc.default.cidr_block}","10.101.0.0/16","10.103.0.0/16","10.122.0.0/23","10.123.0.0/23","10.124.0.0/23"]
   }
 
   egress {
@@ -421,7 +400,7 @@ resource "aws_security_group" "vms" {
 resource "aws_security_group" "rds" {
   name        = "${var.deployment}-rds"
   description = "Concourse UP RDS security group"
-  vpc_id      = "${aws_vpc.default.id}"
+  vpc_id      = "${data.aws_vpc.default.id}"
 
   tags {
     Name = "${var.deployment}-rds"
@@ -433,14 +412,14 @@ resource "aws_security_group" "rds" {
     from_port   = 5432
     to_port     = 5432
     protocol    = "tcp"
-    cidr_blocks = ["${data.aws_vpc.selected.cidr_block}"]
+    cidr_blocks = ["${data.aws_vpc.default.cidr_block}"]
   }
 }
 
 resource "aws_security_group" "atc" {
   name        = "${var.deployment}-atc"
   description = "Concourse UP ATC security group"
-  vpc_id      = "${aws_vpc.default.id}"
+  vpc_id      = "${data.aws_vpc.default.id}"
 
   tags {
     Name = "${var.deployment}-atc"
@@ -488,12 +467,12 @@ resource "aws_security_group" "atc" {
     from_port   = 8443
     to_port     = 8443
     protocol    = "tcp"
-    cidr_blocks = [ "${aws_eip.atc.public_ip}/32", "10.101.0.0/16","10.103.0.0/16","10.122.0.0/23","10.123.0.0/23","10.124.0.0/23"]
+    cidr_blocks = [ "10.90.70.7/32", "10.101.0.0/16","10.103.0.0/16","10.122.0.0/23","10.123.0.0/23","10.124.0.0/23"]
   }
 }
 
 # resource "aws_route_table" "rds" {
-#   vpc_id = "${aws_vpc.default.id}"
+#   vpc_id = "${data.aws_vpc.default.id}"
 #
 #   tags {
 #     Name = "${var.deployment}-rds"
@@ -502,47 +481,40 @@ resource "aws_security_group" "atc" {
 #   }
 # }
 
-data "aws_subnet" "rds_a" {
-  id = "subnet-1d712c31"
+
+resource "aws_route_table_association" "rds_a" {
+  subnet_id      = "${aws_subnet.rds_a.id}"
+  route_table_id = "rtb-2766c55c"
 }
 
-data "aws_subnet" "rds_b" {
-  id = "subnet-fda5b5b5"
+resource "aws_route_table_association" "rds_b" {
+  subnet_id      = "${aws_subnet.rds_b.id}"
+  route_table_id = "rtb-2766c55c"
 }
 
-# resource "aws_route_table_association" "rds_a" {
-#   subnet_id      = "${aws_subnet.rds_a.id}"
-#   route_table_id = "${aws_route_table.rds.id}"
-# }
-#
-# resource "aws_route_table_association" "rds_b" {
-#   subnet_id      = "${aws_subnet.rds_b.id}"
-#   route_table_id = "${aws_route_table.rds.id}"
-# }
-#
-# resource "aws_subnet" "rds_a" {
-#   vpc_id            = "${aws_vpc.default.id}"
-#   availability_zone = "${var.region}a"
-#   cidr_block        = "10.0.4.0/24"
-#
-#   tags {
-#     Name = "${var.deployment}-rds-a"
-#     concourse-up-project = "${var.project}"
-#     concourse-up-component = "rds"
-#   }
-# }
-#
-# resource "aws_subnet" "rds_b" {
-#   vpc_id            = "${aws_vpc.default.id}"
-#   availability_zone = "${var.region}b"
-#   cidr_block        = "10.0.5.0/24"
-#
-#   tags {
-#     Name = "${var.deployment}-rds-b"
-#     concourse-up-project = "${var.project}"
-#     concourse-up-component = "rds"
-#   }
-# }
+resource "aws_subnet" "rds_a" {
+  vpc_id            = "${data.aws_vpc.default.id}"
+  availability_zone = "${var.region}a"
+  cidr_block        = "10.90.74.0/24"
+
+  tags {
+    Name = "${var.deployment}-rds-a"
+    concourse-up-project = "${var.project}"
+    concourse-up-component = "rds"
+  }
+}
+
+resource "aws_subnet" "rds_b" {
+  vpc_id            = "${data.aws_vpc.default.id}"
+  availability_zone = "${var.region}b"
+  cidr_block        = "10.90.75.0/24"
+
+  tags {
+    Name = "${var.deployment}-rds-b"
+    concourse-up-project = "${var.project}"
+    concourse-up-component = "rds"
+  }
+}
 
 resource "aws_db_subnet_group" "default" {
   name       = "${var.deployment}"
@@ -579,7 +551,7 @@ resource "aws_db_instance" "default" {
 }
 
 output "vpc_id" {
-  value = "${aws_vpc.default.id}"
+  value = "${var.vpc_id}"
 }
 
 output "source_access_ip" {
@@ -591,11 +563,11 @@ output "director_key_pair" {
 }
 
 output "director_public_ip" {
-  value = "${aws_eip.director.public_ip}"
+  value = "10.90.70.6"
 }
 
 output "atc_public_ip" {
-  value = "${aws_eip.atc.public_ip}"
+  value = "10.90.70.7"
 }
 
 output "director_security_group_id" {

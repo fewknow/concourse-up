@@ -35,10 +35,10 @@ networks:
 - name: private
   type: manual
   subnets:
-  - range: 10.0.0.0/24
-    gateway: 10.0.0.1
+  - range: 10.90.70.0/24
+    gateway: 10.90.70.1
     dns:
-    - 10.0.0.2
+    - 10.90.70.2
     cloud_properties:
       subnet: <% .DirectorSubnetID %>
 - name: public
@@ -63,7 +63,7 @@ jobs:
 
   networks:
   - name: private
-    static_ips: [10.0.0.6]
+    static_ips: [10.90.70.6]
     default: [dns, gateway]
   - name: public
     static_ips:
@@ -71,7 +71,7 @@ jobs:
 
   properties:
     nats:
-      address: 10.0.0.6
+      address: 10.90.70.6
       user: nats
       password: <% .NATSPassword %>
       tls:
@@ -98,8 +98,8 @@ jobs:
       adapter: postgres
 
     registry:
-      address: 10.0.0.6
-      host: 10.0.0.6
+      address: 10.90.70.6
+      host: 10.90.70.6
       db: *db
       http:
         user: admin
@@ -154,7 +154,7 @@ jobs:
       - <% .VMsSecurityGroupID %>
       region: <% .AWSRegion %>
     agent:
-      mbus: "nats://nats:<% .NATSPassword %>@10.0.0.6:4222"
+      mbus: "nats://nats:<% .NATSPassword %>@10.90.70.6:4222"
     ntp: &ntp
     - 0.pool.ntp.org
     - 1.pool.ntp.org
@@ -190,7 +190,7 @@ variables:
   options:
     ca: nats_ca
     common_name: default.nats.bosh-internal
-    alternative_names: [10.0.0.6]
+    alternative_names: [10.90.70.6]
     extended_key_usage:
     - server_auth
 

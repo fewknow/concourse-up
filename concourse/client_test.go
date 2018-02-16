@@ -277,7 +277,7 @@ sWbB3FCIsym1FXB+eRnVF3Y15RwBWWKA5RfwUNpEXFxtv24tQ8jrdA==
 			err := client.Deploy()
 			Expect(err).ToNot(HaveOccurred())
 
-			Expect(actions).To(ContainElement("generating cert ca: concourse-up-happymeal, ca: [99.99.99.99 10.0.0.6]"))
+			Expect(actions).To(ContainElement("generating cert ca: concourse-up-happymeal, ca: [99.99.99.99 10.90.70.6]"))
 		})
 
 		It("Generates certificates for concourse", func() {
